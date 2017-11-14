@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript" src="./lib/three.js"></script>
+    <script src="./lib/renderers/Projector.js"></script>
+    <script src="./lib/loader/OBJLoader.js"></script>
+    <script src="./lib/loader/MTLLoader.js"></script>
+    <script src="./lib/loader/PLYLoader.js"></script>
+    <script src="./lib/controls/OrbitControls.js"></script>
+    <script src="./lib/dat.gui.min.js"></script>
+    <script src="./lib/stats.min.js"></script>
+    <script src="./lib/THREEx.KeyboardState.js"></script>
+
+
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+    body {
+        margin: 0px;
+        background-color: #000000;
+        overflow: hidden;
+    }
+    </style>
+</head>
+
+<body>
+    <script id="vertexShader" type="x-shader/x-vertex">
+        varying vec2 vUv;
+        varying vec3 vNormal;
+  
+        void main(){
+                vUv = uv;
+                vNormal = normal;
+                vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+                gl_Position = projectionMatrix * mvPosition;
+  
+            }
+    </script>
+
+    <script id="fragmentShader" type="x-shader/x-fragment">
+        //texture
+        uniform sampler2D texture;
+        //time
+        uniform float u_time;
+  
+        vec3 u_lightColor = vec3(1.0, 1.0, 1.0);//color
+  
+        //lightDirection
+        uniform vec3 u_lightDirection;
+  
+        //uv mapping
+        varying vec2 vUv;
+  
+        //normal
+        varying vec3 vNormal;
+  
+        void main(void){
+  
+            vec3 faceNormal = normalize(vNormal);
+  
+            // float nDotL = max(dot(u_lightDirection, faceNormal), 0.0);
+  
+            vec4 a_color = texture2D(texture, vUv);
+  
+            vec4 AmbientColor = vec4(u_lightColor, 1.0) * a_color;
+
+            // vec4 diffuseColor = a_color * vec4(u_lightColor, 1.0) * nDotL;
+  
+            gl_FragColor = a_color * AmbientColor;
+        }
+    </script>
+
+    <script>
+    var statsEnabled = true;
+    var camera, subcamera, scene, renderer, controls, subcontrols;
+    var subcameraActive = false;
+    var light,light2,lightChangeFlag = true;
+    var face,body;
+    var keyboard = new THREEx.KeyboardState();
+    var mesh;
+    var container, stats;
+    var texture_map, normal_map;
+
+    var parameters;
+    var gui;
+
+    var projector, mouse = { x: 0, y: 0 }, INTERSECTED;
+
+    var windowHalfX = window.innerWidth / 2;
+    var windowHalfY = window.innerHeight / 2;
+    init();
+    animate();
+    function init() {
+
+                //container
+                container = document.createElement( 'div' );
+                document.body.appendChild( container );
+
+                if ( statsEnabled ) {
+                    stats = new Stats();
+                    container.appendChild( stats.dom );
+                }
+
+                //camera
+                camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
+                camera.position.z = 30;
+
+
+                //subcamera
+                subcamera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
+                subcamera.position.x = 0;
+                subcamera.position.y = -100;
+                subcamera.position.z = 200;
+
+
+                //scene
+                scene = new THREE.Scene();
+                //textureLoader
+                var textureLoader = new THREE.TextureLoader();
+
+                uniforms = {
+                    time: { value: 1.0 },
+                    texture: { value: new THREE.TextureLoader().load( "./res/JamesHat/merge3d.jpg" ) }
+                };
+                //normal_material
+                var normal_material = new THREE.MeshPhongMaterial( {
+                    color: 0xdddddd,
+                    specular: 0x222222,
+                    shininess: 35,
+                    map: textureLoader.load( "./res/JamesHat/merge3d.jpg" ),
+                    // normalMap: textureLoader.load( "./res/JamesHat/merge3d_NRM.png"),
+                    normalScale: new THREE.Vector2( 1, 1 )
+                } );
+                //material with custom shader
+                var shader_material = new THREE.ShaderMaterial( {
+                    // color: 0xdddddd,
+                    // specular: 0x222222,
+                    // shininess: 35,
+                    // map: textureLoader.load( "./res/JamesHat/merge3d.jpg" ),
+                    // normalMap: textureLoader.load( "./res/JamesHat/merge3d_NRM.png"),
+                    // normalScale: new THREE.Vector2( 1, 1 ),
+
+                    uniforms : uniforms,
+                    vertexShader: document.getElementById( 'vertexShader' ).textContent,
+                    fragmentShader: document.getElementById( 'fragmentShader' ).textContent
+                } );
+                //loader manager
+                var onProgress = function ( xhr ) {
+                    if ( xhr.lengthComputable ) {
+                        var percentComplete = xhr.loaded / xhr.total * 100;
+                        console.log( Math.round(percentComplete, 2) + '% downloaded' );
+                    }
+                };
+                var onError = function ( xhr ) { };
+
+                //face
+                face = new THREE.Object3D();
+                var objLoader = new THREE.OBJLoader();
+                // objLoader.setMaterials( normal_material );
+                    // objLoader.setPath('res/JamesHat/'); 神秘
+                    objLoader.load( 'res/JamesHat/merge3d.obj', function ( object  ) {
+                        object.children[0].material = shader_material;
+                        object.children[0].material.transparent = false;
+                        object.children[0].material.side = THREE.DoubleSide;
+                        normal_map = object.children[0].material.normalMap;
+                        texture_map = object.children[0].material.map;
+
+                        face = object.children[0];
+                        scene.add(face);
+                    }, onProgress, onError );
+
+
+
+                // // //load body
+                var loader = new THREE.PLYLoader();
+                loader.load('res/body/body.ply', function( geometry ) {
+                    geometry.computeVertexNormals();
+                    var material = new THREE.MeshPhongMaterial({
+                        color: 0xaaaaaa, specular: 0x333333,
+                        side: THREE.DoubleSide, vertexColors: THREE.VertexColors
+                    });
+
+                    var body = new THREE.Mesh( geometry,material );
+
+                    body.position.x = 5;
+                    body.position.y = - 13;
+                    body.position.z = 94;
+                    // body.rotation.x = - Math.PI / 2;
+                    body.scale.multiplyScalar( 0.09 );
+                    scene.add(body);
+                }, onProgress, onError);
+
+
+                //renderer
+                renderer = new THREE.WebGLRenderer();
+                renderer.setPixelRatio( window.devicePixelRatio );
+                renderer.setSize( window.innerWidth, window.innerHeight );
+                renderer.setClearColor(0xFFFAF0, 1.0); // black
+
+                //controls
+                controls = new THREE.OrbitControls( camera, renderer.domElement );
+                // controls.addEventListener( 'change', render ); 
+                // controls.minDistance = 2.3;
+                // controls.maxDistance = 10.0;
+                // controls.zoomSpeed = 2.0;
+                // controls.rotateSpeed = 3.0;
+                // controls.keyPanSpeed = 30.0;
+                subcontrols = new THREE.OrbitControls( subcamera, renderer.domElement );
+
+                //light
+                var light = new THREE.AmbientLight(0xffffff);
+                light.intensity = 1;
+                light.position.set(0,100,100);
+                scene.add(light);
+                light2 = new THREE.PointLight(0xffffff);
+                light2.position.set(0,30,30);
+                scene.add(light2);
+
+
+                container.appendChild( renderer.domElement );
+                document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+
+
+                //GUI
+                gui = new dat.GUI();
+
+                light = 
+                {
+                    x: 0, y: 0, z: 0,
+                    color: "#ff0000",
+                        visible: true, // color (change "#" to "0x")
+                        intensity: 1,
+                        // reset: function() { resetCube() }
+                    };
+
+                    face = 
+                    {
+                        texture: true,
+                        normalmap: true,
+                    };
+                    camerapostion = 
+                    {
+                        position: 'face',
+                    };
+
+                    //light position folder1
+                    var folder1 = gui.addFolder('Light Position');
+                    var lightX = folder1.add( light, 'x' ).min(-100).max(100).step(1).listen();
+                    var lightY = folder1.add( light, 'y' ).min(-100).max(100).step(1).listen();
+                    var lightZ = folder1.add( light, 'z' ).min(-100).max(100).step(1).listen();
+                    folder1.open();
+                    lightX.onChange(function(value) 
+                        {   light2.position.x = value;   });
+                    lightY.onChange(function(value) 
+                        {   light2.position.y = value;   });
+                    lightZ.onChange(function(value) 
+                        {   light2.position.z = value;   });
+
+                    //light intensity 
+                    var lightIntensity = gui.add( light, 'intensity' ).min(0).max(10).step(0.1).listen();
+                    lightIntensity.onChange(function(value) 
+                        {   light2.intensity = value;   });
+
+
+                    var lightColor = gui.addColor( light, 'color' ).name('Light Color').listen();
+                    lightColor.onChange(function(value) // onFinishChange
+                        {   light2.color.setHex( value.replace("#", "0x") );   });
+
+                    var lightVisible = gui.add( light, 'visible' ).name('Light Visible?').listen();
+                    lightVisible.onChange(function(value) 
+                        {   light2.visible = value;   });
+
+                    //texture
+                    var control_texture = gui.add(face, 'texture').name('Shader_Texture').listen();
+                    control_texture.onChange(function (value) {
+                        if (face) {
+                            if (value) {
+                                face.material = shader_material;
+                            }
+                            else {
+                                face.material = normal_material;
+                            }
+                            face.material.needsUpdate = true;
+                        }
+                    });
+
+                    // var control_nmap = gui.add(face, 'normalmap').name('Normal Map').listen();
+                    // control_nmap.onChange(function (value) {
+                    //     if (face) {
+                    //         if (value) {
+                    //             face.material.normalMap = normal_map;
+                    //         }
+                    //         else {
+                    //             face.material.normalMap = null;
+                    //         }
+                    //         face.material.needsUpdate = true;
+                    //     }
+
+                    // });
+                    var camera_change = gui.add(camerapostion, 'position', ['face', 'body']).name('Camera position');
+                    camera_change.onChange(function (value) {
+                        if (value == 'face') {
+                            camera.position.x = 0;
+                            camera.position.y = 0;
+                            camera.position.z = 30;
+                            camera.lookAt( scene.position );
+                            subcameraActive = false;
+                        }
+                        if (value == 'body') {
+                            subcameraActive = true;
+                        }
+                    });                   
+                    gui.open();
+
+                }
+
+
+
+                function onWindowResize() {
+                    windowHalfX = window.innerWidth / 2;
+                    windowHalfY = window.innerHeight / 2;
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize( window.innerWidth, window.innerHeight );
+                }
+
+                function onDocumentMouseMove( event ) {
+
+                    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+                    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+                // if (lightChangeFlag) {
+                //     light2.position.x = mouse.x * 100;
+                //     light2.position.y = mouse.y * 100;
+                // };
+
+                // console.log("Light: ", light2.position);
+
+            }
+
+            function animate() {
+                requestAnimationFrame( animate );
+                // controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
+                render();
+                update();
+                if ( statsEnabled ) stats.update();
+            }
+
+            function update() {
+
+                if ( keyboard.pressed("1") )
+                    {  subcameraActive = true; }
+                if ( keyboard.pressed("2") )
+                    {  subcameraActive = false;  }
+                if ( keyboard.pressed("q") )
+                    {  lightChangeFlag = false;  }
+                if ( keyboard.pressed("w") )
+                    {  lightChangeFlag = true;  }
+            }
+
+
+            function render() {
+
+                subcamera.lookAt(new THREE.Vector3(0,-100,0) );
+
+
+                if (subcameraActive)
+                    {  renderer.render( scene, subcamera );  }
+                else
+                    {  renderer.render( scene, camera );  }
+
+            }
+
+            </script>
+
+        </body>
+        </html>
