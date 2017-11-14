@@ -171,27 +171,6 @@
                     }, onProgress, onError );
 
 
-
-                // // //load body
-                var loader = new THREE.PLYLoader();
-                loader.load('res/body/body.ply', function( geometry ) {
-                    geometry.computeVertexNormals();
-                    var material = new THREE.MeshPhongMaterial({
-                        color: 0xaaaaaa, specular: 0x333333,
-                        side: THREE.DoubleSide, vertexColors: THREE.VertexColors
-                    });
-
-                    var body = new THREE.Mesh( geometry,material );
-
-                    body.position.x = 5;
-                    body.position.y = - 13;
-                    body.position.z = 94;
-                    // body.rotation.x = - Math.PI / 2;
-                    body.scale.multiplyScalar( 0.09 );
-                    scene.add(body);
-                }, onProgress, onError);
-
-
                 //renderer
                 renderer = new THREE.WebGLRenderer();
                 renderer.setPixelRatio( window.devicePixelRatio );
