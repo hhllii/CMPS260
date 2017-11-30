@@ -33,6 +33,13 @@
     var keyboard = new THREEx.KeyboardState();
     var container, stats;
 
+    var mesh, skeleton, mixer;
+    var crossFadeControls = [];
+    var idleAction, walkAction, runAction;
+    var idleWeight, walkWeight, runWeight;
+    var actions;
+    var settings;
+
     var parameters;
     var gui;
 
@@ -127,11 +134,12 @@
 
         // var jsonLoader = new THREE.JSONLoader();
         // jsonLoader.load( "res/model/marine_anims_all.json", addModelToScene );
-        new THREE.ObjectLoader().load( "res/model/marine_anims_all.json", function ( loadedObject ) {
+        new THREE.ObjectLoader().load( "res/model/marine_anims_core.json", function ( loadedObject ) {
             loadedObject.traverse( function ( child ) {
                 if ( child instanceof THREE.SkinnedMesh ) {
                     mesh = child;
                     android = mesh;
+                    android.material.morphTargets = true;
                     scene.add(android);
                 }
             } );
@@ -155,11 +163,12 @@
                 controls.update();
 
                 // Initialize mixer and clip actions
-                // mixer = new THREE.AnimationMixer( mesh );
-                // idleAction = mixer.clipAction( 'idle' );
-                // walkAction = mixer.clipAction( 'walk' );
-                // runAction = mixer.clipAction( 'run' );
-                // actions = [ idleAction, walkAction, runAction ];
+                mixer = new THREE.AnimationMixer( mesh );
+                idleAction = mixer.clipAction( 'idle' );
+                walkAction = mixer.clipAction( 'walk' );
+                runAction = mixer.clipAction( 'run' );
+                walkAction.play();
+                actions = [ idleAction, walkAction, runAction ];
                 // activateAllActions();
                 // Listen on window resizing and start the render loop
                 window.addEventListener( 'resize', onWindowResize, false );
@@ -206,39 +215,9 @@
             light2.position.z = value;
         });
 
-        //light intensity
-        var lightIntensity = gui.add(light, 'intensity').min(0).max(10).step(0.1).listen();
-        lightIntensity.onChange(function (value) {
-            light2.intensity = value;
-        });
-
-
-        var lightColor = gui.addColor(light, 'color').name('Light Color').listen();
-        lightColor.onChange(function (value) // onFinishChange
-        {
-            light2.color.setHex(value.replace("#", "0x"));
-        });
-
-        var lightVisible = gui.add(light, 'visible').name('Light Visible?').listen();
-        lightVisible.onChange(function (value) {
-            light2.visible = value;
-        });
-
 
         gui.open();
 
-    }
-
-    function addModelToScene( geometry, materials ) 
-    {
-        // for preparing animation
-        for (var i = 0; i < materials.length; i++)
-            materials[i].morphTargets = true;
-        
-        var material = materials[0];
-        android = new THREE.Mesh( geometry, material );
-        android.scale.set(0.02,0.02,0.02);
-        scene.add( android );
     }
 
     function onWindowResize() {
@@ -249,9 +228,35 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
+    function activateAllActions() {
+
+        // setWeight( idleAction, settings[ 'modify idle weight' ] );
+        // setWeight( walkAction, settings[ 'modify walk weight' ] );
+        // setWeight( runAction, settings[ 'modify run weight' ] );
+
+        actions.forEach( function ( action ) {
+
+            action.play();
+
+        } );
+    }
+
+    function setWeight( action, weight ) {
+
+        action.enabled = true;
+        action.setEffectiveTimeScale( 1 );
+        action.setEffectiveWeight( weight );
+
+    }
 
     function animate() {
         requestAnimationFrame(animate);
+        idleWeight = 0.0;
+        walkWeight = 1.0;
+        runWeight = 0.0;
+
+        // var mixerUpdateDelta = clock.getDelta();
+        // mixer.update( mixerUpdateDelta );
         render();
         update();
         if (statsEnabled) stats.update();
@@ -260,35 +265,10 @@
     function update() {
         // delta = change in time since last call (seconds)
         delta = clock.getDelta(); 
+        mixer.update ( delta );
         var moveDistance = 100 * delta;
         walking = false;
 
-        if (Gamepad.supported) 
-        {
-            var pads = Gamepad.getStates();
-            var pad = pads[0]; // assume only 1 player.
-            if (pad) 
-            {
-
-                // adjust for deadzone.
-                if (Math.abs(pad.leftStickX + pad.rightStickX) > 0.3)
-                {
-                    android.rotation.y -= delta * (pad.leftStickX + pad.rightStickX);
-                    walking = true;
-                }
-                if (Math.abs(pad.leftStickY + pad.rightStickY) > 0.2)
-                {
-                    android.translateZ( -moveDistance * (pad.leftStickY + pad.rightStickY) );
-                    walking = true;
-                }
-                if ( pad.faceButton0 || pad.faceButton1 || pad.faceButton2 || pad.faceButton3 || pad.select || pad.start )
-                { 
-                    android.position.set(0,0,0);
-                    android.rotation.set(0,0,0);
-                }
-
-            }
-        }
 
         // move forwards / backwards
         if ( keyboard.pressed("down") )
