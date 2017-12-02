@@ -134,11 +134,12 @@
 
         // var jsonLoader = new THREE.JSONLoader();
         // jsonLoader.load( "res/model/marine_anims_all.json", addModelToScene );
-        new THREE.ObjectLoader().load( "res/model/marine_anims_core.json", function ( loadedObject ) {
+        new THREE.ObjectLoader().load( "res/model/marine.json", function ( loadedObject ) {
             loadedObject.traverse( function ( child ) {
                 if ( child instanceof THREE.SkinnedMesh ) {
                     mesh = child;
                     android = mesh;
+                    android.material.transparent = false;
                     android.material.morphTargets = true;
                     scene.add(android);
                 }
@@ -160,6 +161,7 @@
                 camera.position.set( 0.0, radius, radius * 3.5 );
                 controls = new THREE.OrbitControls( camera, renderer.domElement );
                 controls.target.set( 0, radius, 0 );
+                controls.enableKeys = false;
                 controls.update();
 
                 // Initialize mixer and clip actions
@@ -173,7 +175,7 @@
                 // Listen on window resizing and start the render loop
                 window.addEventListener( 'resize', onWindowResize, false );
                 animate();
-            } );
+            }, onProgress, onError );
 
         container.appendChild(renderer.domElement);
 
@@ -272,9 +274,9 @@
 
         // move forwards / backwards
         if ( keyboard.pressed("down") )
-            android.translateZ( -moveDistance );
+            android.translateZ( moveDistance );
         if ( keyboard.pressed("up") )
-            android.translateZ(  moveDistance );
+            android.translateZ(  -moveDistance );
         // rotate left/right
         if ( keyboard.pressed("left") )
             android.rotation.y += delta;
@@ -295,24 +297,24 @@
 
 
     function render() {
-        if ( android && walking ) // exists / is loaded 
-        {
-            // Alternate morph targets
-            time = new Date().getTime() % duration;
-            keyframe = Math.floor( time / interpolation ) + animOffset;
-            if ( keyframe != currentKeyframe ) 
-            {
-                android.morphTargetInfluences[ lastKeyframe ] = 0;
-                android.morphTargetInfluences[ currentKeyframe ] = 1;
-                android.morphTargetInfluences[ keyframe ] = 0;
-                lastKeyframe = currentKeyframe;
-                currentKeyframe = keyframe;
-            }
-            android.morphTargetInfluences[ keyframe ] = 
-            ( time % interpolation ) / interpolation;
-            android.morphTargetInfluences[ lastKeyframe ] = 
-            1 - android.morphTargetInfluences[ keyframe ];
-        }
+        // if ( android && walking ) // exists / is loaded 
+        // {
+        //     // Alternate morph targets
+        //     time = new Date().getTime() % duration;
+        //     keyframe = Math.floor( time / interpolation ) + animOffset;
+        //     if ( keyframe != currentKeyframe ) 
+        //     {
+        //         android.morphTargetInfluences[ lastKeyframe ] = 0;
+        //         android.morphTargetInfluences[ currentKeyframe ] = 1;
+        //         android.morphTargetInfluences[ keyframe ] = 0;
+        //         lastKeyframe = currentKeyframe;
+        //         currentKeyframe = keyframe;
+        //     }
+        //     android.morphTargetInfluences[ keyframe ] = 
+        //     ( time % interpolation ) / interpolation;
+        //     android.morphTargetInfluences[ lastKeyframe ] = 
+        //     1 - android.morphTargetInfluences[ keyframe ];
+        // }
     
         renderer.render( scene, camera );
 
