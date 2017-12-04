@@ -134,7 +134,7 @@
 
         // var jsonLoader = new THREE.JSONLoader();
         // jsonLoader.load( "res/model/marine_anims_all.json", addModelToScene );
-        new THREE.ObjectLoader().load( "res/model/cube.json", function ( loadedObject ) {
+        new THREE.ObjectLoader().load( "res/model/miku/miku.json", function ( loadedObject ) {
             loadedObject.traverse( function ( child ) {
                 if ( child instanceof THREE.SkinnedMesh ) {
                     mesh = child;

@@ -44,6 +44,7 @@
     var gui;
 
     var clock = new THREE.Clock();
+    var singleStepMode = false;
 
     // custom global variables
     var android;
@@ -57,11 +58,11 @@
 
     var windowHalfX = window.innerWidth / 2;
     var windowHalfY = window.innerHeight / 2;
-    init();
-    animate();
+    // init();
+    // animate();
 
 
-    function init() {
+    // function init() {
         //container
         container = document.createElement('div');
         document.body.appendChild(container);
@@ -98,12 +99,7 @@
         //controls
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableKeys = false;
-        // controls.addEventListener( 'change', render );
-        // controls.minDistance = 2.3;
-        // controls.maxDistance = 10.0;
-        // controls.zoomSpeed = 2.0;
-        // controls.rotateSpeed = 3.0;
-        // controls.keyPanSpeed = 30.0;
+
 
         //light
         var light = new THREE.AmbientLight(0xffffff);
@@ -134,7 +130,7 @@
 
         // var jsonLoader = new THREE.JSONLoader();
         // jsonLoader.load( "res/model/marine_anims_all.json", addModelToScene );
-        new THREE.ObjectLoader().load( "res/model/marine.json", function ( loadedObject ) {
+        new THREE.ObjectLoader().load( "res/model/marine/marine_walk.json", function ( loadedObject ) {
             loadedObject.traverse( function ( child ) {
                 if ( child instanceof THREE.SkinnedMesh ) {
                     mesh = child;
@@ -152,7 +148,7 @@
                 mesh.rotation.y = - 135 * Math.PI / 180;
                 scene.add( mesh );
                 skeleton = new THREE.SkeletonHelper( mesh );
-                // skeleton.visible = false;
+                skeleton.visible = false;
                 scene.add( skeleton );
                 // Initialize camera and camera controls
                 var radius = mesh.geometry.boundingSphere.radius;
@@ -168,10 +164,13 @@
                 mixer = new THREE.AnimationMixer( mesh );
                 idleAction = mixer.clipAction( 'idle' );
                 walkAction = mixer.clipAction( 'walk' );
+                walkbackAction = mixer.clipAction( 'walk_back' );
                 runAction = mixer.clipAction( 'run' );
-                walkAction.play();
-                actions = [ idleAction, walkAction, runAction ];
-                // activateAllActions();
+                // danceAction = mixer.clipAction( 'dance' );
+                // danceAction.play();
+                // walkAction.play();
+                actions = [ idleAction, walkAction, walkbackAction, runAction ];
+                activateAllActions();
                 // Listen on window resizing and start the render loop
                 window.addEventListener( 'resize', onWindowResize, false );
                 animate();
@@ -181,46 +180,43 @@
 
         //GUI
         gui = new dat.GUI();
+        var folder1 = gui.addFolder( 'Visibility' );
+        var folder3 = gui.addFolder( 'Blend Weights' );
 
-        light =
-            {
-                x: 0, y: 0, z: 0,
-                color: "#ff0000",
-                visible: true, // color (change "#" to "0x")
-                intensity: 1,
-                // reset: function() { resetCube() }
-            };
+        settings={
+            'show model':            true,
+            'show skeleton':         false,
+            'modify idle weight':    1.0,
+            'modify walk weight':    0.0,
+            'modify walk back weight':    0.0,
+            'modify run weight':     0.0,
+        };
+        folder1.add( settings, 'show model' ).onChange( showModel );
+        folder1.add( settings, 'show skeleton' ).onChange( showSkeleton );
+        folder3.add( settings, 'modify idle weight', 0.0, 1.0, 0.01 ).listen().onChange( function ( weight ) { setWeight( idleAction, weight ) } );
+        folder3.add( settings, 'modify walk weight', 0.0, 1.0, 0.01 ).listen().onChange( function ( weight ) { setWeight( walkAction, weight ) } );
+        folder3.add( settings, 'modify walk back weight', 0.0, 1.0, 0.01 ).listen().onChange( function ( weight ) { setWeight( walkAction, weight ) } );
+        folder3.add( settings, 'modify run weight', 0.0, 1.0, 0.01 ).listen().onChange( function ( weight ) { setWeight( runAction, weight ) } );
 
-        face =
-            {
-                texture: true,
-                normalmap: true,
-            };
-        camerapostion =
-            {
-                position: 'face',
-            };
-
-        //light position folder1
-        var folder1 = gui.addFolder('Light Position');
-        var lightX = folder1.add(light, 'x').min(-100).max(100).step(1).listen();
-        var lightY = folder1.add(light, 'y').min(-100).max(100).step(1).listen();
-        var lightZ = folder1.add(light, 'z').min(-100).max(100).step(1).listen();
         folder1.open();
-        lightX.onChange(function (value) {
-            light2.position.x = value;
-        });
-        lightY.onChange(function (value) {
-            light2.position.y = value;
-        });
-        lightZ.onChange(function (value) {
-            light2.position.z = value;
-        });
-
-
+        folder3.open();
         gui.open();
 
+    // }
+
+    function showModel( visibility ) {
+
+        mesh.visible = visibility;
+
     }
+
+
+    function showSkeleton( visibility ) {
+
+        skeleton.visible = visibility;
+
+    }
+
 
     function onWindowResize() {
         windowHalfX = window.innerWidth / 2;
@@ -232,9 +228,10 @@
 
     function activateAllActions() {
 
-        // setWeight( idleAction, settings[ 'modify idle weight' ] );
-        // setWeight( walkAction, settings[ 'modify walk weight' ] );
-        // setWeight( runAction, settings[ 'modify run weight' ] );
+        setWeight( idleAction, settings[ 'modify idle weight' ] );
+        setWeight( walkAction, settings[ 'modify walk weight' ] );
+        setWeight( walkbackAction, settings[ 'modify walk back weight' ] );
+        setWeight( runAction, settings[ 'modify run weight' ] );
 
         actions.forEach( function ( action ) {
 
@@ -251,12 +248,25 @@
 
     }
 
+
+    function updateWeightSliders() {
+
+        settings[ 'modify idle weight' ] = idleWeight;
+        settings[ 'modify walk weight' ] = walkWeight;
+        settings[ 'modify walk back weight' ] = walkbackWeight;
+        settings[ 'modify run weight' ] = runWeight;
+
+    }
+
+
     function animate() {
         requestAnimationFrame(animate);
-        idleWeight = 0.0;
-        walkWeight = 1.0;
-        runWeight = 0.0;
+        idleWeight = idleAction.getEffectiveWeight();
+        walkWeight = walkAction.getEffectiveWeight();
+        walkbackWeight = walkbackAction.getEffectiveWeight();
+        runWeight = runAction.getEffectiveWeight();
 
+        updateWeightSliders();
         // var mixerUpdateDelta = clock.getDelta();
         // mixer.update( mixerUpdateDelta );
         render();
@@ -268,9 +278,8 @@
         // delta = change in time since last call (seconds)
         delta = clock.getDelta(); 
         mixer.update ( delta );
-        var moveDistance = 100 * delta;
+        var moveDistance = 140 * delta;
         walking = false;
-
 
         // move forwards / backwards
         if ( keyboard.pressed("down") )
@@ -288,7 +297,9 @@
         for (var i = 0; i < walkingKeys.length; i++)
         {
             if ( keyboard.pressed(walkingKeys[i]) )
+            {
                 walking = true;
+            }
         }
     
         controls.update();
@@ -297,24 +308,26 @@
 
 
     function render() {
-        // if ( android && walking ) // exists / is loaded 
-        // {
-        //     // Alternate morph targets
-        //     time = new Date().getTime() % duration;
-        //     keyframe = Math.floor( time / interpolation ) + animOffset;
-        //     if ( keyframe != currentKeyframe ) 
-        //     {
-        //         android.morphTargetInfluences[ lastKeyframe ] = 0;
-        //         android.morphTargetInfluences[ currentKeyframe ] = 1;
-        //         android.morphTargetInfluences[ keyframe ] = 0;
-        //         lastKeyframe = currentKeyframe;
-        //         currentKeyframe = keyframe;
-        //     }
-        //     android.morphTargetInfluences[ keyframe ] = 
-        //     ( time % interpolation ) / interpolation;
-        //     android.morphTargetInfluences[ lastKeyframe ] = 
-        //     1 - android.morphTargetInfluences[ keyframe ];
-        // }
+        if (keyboard.pressed("down") && keyboard.pressed("up")) 
+        {
+            //up and down idle
+        }
+        else if ( android && walking && keyboard.pressed("up")) // up walk forward
+        {
+            setWeight( idleAction, 0.0 );
+            setWeight( walkAction, 1.0 );
+        }
+        else if (android && walking && keyboard.pressed("down")) //down walk back
+        {
+            setWeight( idleAction, 0.0 );
+            setWeight( walkbackAction, 1.0 );
+        }
+        else // set idle
+        {
+            setWeight( idleAction, 1.0 );
+            setWeight( walkAction, 0.0 );
+            setWeight( walkbackAction, 0.0 );
+        }
     
         renderer.render( scene, camera );
 

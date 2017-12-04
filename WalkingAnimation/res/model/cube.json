@@ -1,54 +1,43 @@
 {
-    "animations":[{
-        "tracks":[],
-        "fps":24,
-        "name":"default"
-    }],
-    "geometries":[{
-        "data":{
-            "normals":[-0,0,-1,-0,-0,1,-1,-0,-2.38419e-07,8.9407e-08,1,-2.98023e-07,1,-2.38419e-07,-1.49012e-07,-2.68221e-07,-1,2.38419e-07,-0,-0,-1,-0,0,1,-1,5.66244e-07,3.27825e-07,4.76837e-07,1,8.94069e-08,1,-2.08616e-07,-1.19209e-07,-2.08616e-07,-1,1.78814e-07],
-            "faces":[32,0,2,3,0,0,0,32,7,5,4,1,1,1,32,4,1,0,2,2,2,32,5,2,1,3,3,3,32,2,7,3,4,4,4,32,0,7,4,5,5,5,32,0,1,2,6,6,6,32,7,6,5,7,7,7,32,4,5,1,8,8,8,32,5,6,2,9,9,9,32,2,6,7,10,10,10,32,0,3,7,11,11,11],
-            "vertices":[-1,-1,-1,-1,1,-1,1,1,-1,1,-1,-1,-1,-0.999999,1,-0.999999,1,1,1,1,1,1,-1,1],
-            "uvs":[]
-        },
-        "uuid":"18C28122-8E62-47D1-978E-9BD46C6EA427",
-        "type":"Geometry",
-        "name":"CubeGeometry.3"
-    }],
-    "textures":[],
-    "images":[],
-    "materials":[{
-        "shininess":50,
-        "depthWrite":true,
-        "vertexColors":0,
-        "blending":1,
-        "type":"MeshPhongMaterial",
-        "specular":8355711,
-        "depthTest":true,
-        "name":"Material",
-        "color":10724259,
-        "emissive":0,
-        "uuid":"239EF32E-5CB3-4AA6-AB78-EB41BACC426A"
-    }],
     "metadata":{
+        "type":"Object",
         "generator":"io_three",
-        "version":4.4,
-        "type":"Object"
+        "version":4.4
     },
     "object":{
         "children":[{
-            "name":"Cube",
-            "uuid":"56F84581-FB4B-47D1-B3B3-FE789898355A",
+            "name":"\u7acb\u65b9\u4f53",
+            "uuid":"1D6EE66C-2D10-4184-919E-04381030BD0A",
             "matrix":[-1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1],
             "visible":true,
             "type":"Mesh",
-            "material":"239EF32E-5CB3-4AA6-AB78-EB41BACC426A",
-            "castShadow":true,
-            "receiveShadow":true,
-            "geometry":"18C28122-8E62-47D1-978E-9BD46C6EA427"
+            "castShadow":false,
+            "receiveShadow":false,
+            "geometry":"C36C4EBF-29B1-41CA-8A71-45DE22AB3B88"
         }],
-        "matrix":[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+        "uuid":"02FA9A46-E5A5-4DCF-B7FC-97AA45CA4FE9",
         "type":"Scene",
-        "uuid":"293D50C3-530F-4CC1-BC06-25F5F838BEF7"
-    }
+        "matrix":[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]
+    },
+    "geometries":[{
+        "data":{
+            "normals":[1,-0,0,-0,-1,-0,-1,-0,-0,-0,1,0,-0,-0,-1,-0,-0,1,-1,-0,0,-0,0,1],
+            "faces":[34,1,2,0,0,0,0,0,34,3,6,2,0,1,1,1,34,7,4,6,0,2,2,2,34,5,0,4,0,3,3,3,34,6,0,2,0,4,4,4,34,3,5,7,0,5,5,5,34,1,3,2,0,0,0,0,34,3,7,6,0,1,1,1,34,7,5,4,0,6,6,6,34,5,1,0,0,3,3,3,34,6,4,0,0,4,4,4,34,3,1,5,0,7,7,7],
+            "uvs":[],
+            "animations":"\u7acb\u65b9\u4f53Geometry.4.animations.json",
+            "vertices":[1,1,-1,1,1,1,1,-1,-1,1,-1,1,-1,1,-1,-1,1,1,-1,-1,-1,-1,-1,1]
+        },
+        "uuid":"C36C4EBF-29B1-41CA-8A71-45DE22AB3B88",
+        "type":"Geometry",
+        "name":"\u7acb\u65b9\u4f53Geometry.4",
+        "materials":[]
+    }],
+    "textures":[],
+    "materials":[],
+    "animations":[{
+        "tracks":[],
+        "name":"default",
+        "fps":30
+    }],
+    "images":[]
 }
