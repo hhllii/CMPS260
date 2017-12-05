@@ -105,10 +105,10 @@
         //light
         var light = new THREE.AmbientLight(0xffffff);
         light.intensity = 1;
-        light.position.set(0, 100, 100);
+        light.position.set(0, 1000, 1000);
         scene.add(light);
         light2 = new THREE.PointLight(0xffffff);
-        light2.position.set(0, 30, 30);
+        light2.position.set(0, -1000, -1000);
         scene.add(light2);
 
         //floor
@@ -131,8 +131,8 @@
 
         // var jsonLoader = new THREE.JSONLoader();
         // jsonLoader.load( "res/model/marine_anims_all.json", addModelToScene );
-        new THREE.ObjectLoader().load("res/model/BaseHuman.json", function (loadedObject) {
-        // new THREE.ObjectLoader().load("res/model/Marine/marine.json", function (loadedObject) {
+        new THREE.ObjectLoader().load("res/model/BaseHuman_walk3.json", function (loadedObject) {
+            // new THREE.ObjectLoader().load("res/model/Marine/marine.json", function (loadedObject) {
             loadedObject.traverse(function (child) {
                 if (child instanceof THREE.SkinnedMesh) {
                     mesh = child;
@@ -147,21 +147,13 @@
                 return;
             }
             // Add mesh and skeleton helper to scene
-            mesh.rotation.y = - 135 * Math.PI / 180;
-            // mesh.scale.set(100,100,100);
+            // mesh.rotation.y = - 135 * Math.PI / 180;
+            mesh.scale.set(100, 100, 100);
+            mesh.position.y = 75;
             scene.add(mesh);
             skeleton = new THREE.SkeletonHelper(mesh);
             skeleton.visible = false;
             scene.add(skeleton);
-            // Initialize camera and camera controls
-            var radius = mesh.geometry.boundingSphere.radius;
-            var aspect = window.innerWidth / window.innerHeight;
-            camera = new THREE.PerspectiveCamera(45, aspect, 1, 10000);
-            camera.position.set(0.0, radius, radius * 3.5);
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.target.set(0, radius, 0);
-            controls.enableKeys = false;
-            controls.update();
 
             // Initialize mixer and clip actions
             mixer = new THREE.AnimationMixer(mesh);
@@ -169,9 +161,11 @@
             // walkAction = mixer.clipAction('walk');
             // walkAction.play();
 
-            bvhAction = mixer.clipAction('skelballet_walk3');
-            bvhAction.play();
-            // actions = [walkAction];
+            bvhAction1 = mixer.clipAction('skelballet_walk3');
+            // bvhAction1.play();
+            bvhAction2 = mixer.clipAction('skelwalk');
+            // bvhAction2.play();
+            actions = [bvhAction1, bvhAction2];
             // activateAllActions();
             // Listen on window resizing and start the render loop
             window.addEventListener('resize', onWindowResize, false);
@@ -180,19 +174,63 @@
 
         container.appendChild(renderer.domElement);
 
+        //GUI
+        gui = new dat.GUI();
+        var folder1 = gui.addFolder('Visibility');
+        var folder2 = gui.addFolder('bvh motion');
+
+        settings = {
+            'show model': true,
+            'show skeleton': false,
+            'bvh motion1':false,
+            'bvh motion2':false,
+        };
+        folder1.add(settings, 'show model').onChange(showModel);
+        folder1.add(settings, 'show skeleton').onChange(showSkeleton);
+        folder2.add(settings, 'bvh motion1').onChange(motion1);
+        folder2.add(settings, 'bvh motion2').onChange(motion2);
 
 
-        // }
+        folder1.open();
+        folder2.open();
+        gui.open();
 
-        function activateAllActions() {
+        function showModel(visibility) {
+
+            mesh.visible = visibility;
+
+        }
+
+
+        function showSkeleton(visibility) {
+
+            skeleton.visible = visibility;
+
+        }
+        function deactivateAllActions() {
 
             actions.forEach(function (action) {
 
-                action.play();
+                action.stop();
 
             });
         }
 
+        function motion1(active) {
+            deactivateAllActions()
+            if(active)
+            {
+                bvhAction1.play();
+            }
+        }
+
+        function motion2(active) {
+            deactivateAllActions()
+            if(active)
+            {
+                bvhAction2.play();
+            }
+        }
 
         function onWindowResize() {
             windowHalfX = window.innerWidth / 2;
@@ -207,7 +245,7 @@
         function animate() {
             requestAnimationFrame(animate);
             var mixerUpdateDelta = clock.getDelta();
-            mixer.update( mixerUpdateDelta );
+            mixer.update(mixerUpdateDelta);
             walkWeight = 1.0;
             render();
             update();
@@ -215,7 +253,7 @@
         }
 
         function update() {
-
+            // console.log(camera.position);
             controls.update();
             stats.update();
         }
