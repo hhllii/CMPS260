@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <script type="text/javascript" src="./lib/three.js"></script>
     <script src="./lib/renderers/Projector.js"></script>
@@ -25,44 +26,44 @@
 
 <body>
 
-<script>
-    var statsEnabled = true;
-    var camera, scene, renderer, controls, subcontrols;
-    var subcameraActive = false;
-    var light, light2, lightChangeFlag = true;
-    var keyboard = new THREEx.KeyboardState();
-    var container, stats;
+    <script>
+        var statsEnabled = true;
+        var camera, scene, renderer, controls, subcontrols;
+        var subcameraActive = false;
+        var light, light2, lightChangeFlag = true;
+        var keyboard = new THREEx.KeyboardState();
+        var container, stats;
 
-    var mesh, skeleton, mixer;
-    var crossFadeControls = [];
-    var idleAction, walkAction, runAction;
-    var idleWeight, walkWeight, runWeight;
-    var actions;
-    var settings;
+        var mesh, skeleton, mixer;
+        var crossFadeControls = [];
+        var idleAction, walkAction, runAction;
+        var idleWeight, walkWeight, runWeight;
+        var actions;
+        var settings;
 
-    var parameters;
-    var gui;
+        var parameters;
+        var gui;
 
-    var clock = new THREE.Clock();
-    var singleStepMode = false;
+        var clock = new THREE.Clock();
+        var singleStepMode = false;
 
-    // custom global variables
-    var android;
-    var animOffset = 0,   // starting frame of animation
-        walking = false,
-        duration = 1000, // milliseconds to complete animation
-        keyframes = 20,   // total number of animation frames
-        interpolation = duration / keyframes, // milliseconds per frame
-        lastKeyframe = 0,    // previous keyframe
-        currentKeyframe = 0;
+        // custom global variables
+        var android;
+        var animOffset = 0,   // starting frame of animation
+            walking = false,
+            duration = 1000, // milliseconds to complete animation
+            keyframes = 20,   // total number of animation frames
+            interpolation = duration / keyframes, // milliseconds per frame
+            lastKeyframe = 0,    // previous keyframe
+            currentKeyframe = 0;
 
-    var windowHalfX = window.innerWidth / 2;
-    var windowHalfY = window.innerHeight / 2;
-    // init();
-    // animate();
+        var windowHalfX = window.innerWidth / 2;
+        var windowHalfY = window.innerHeight / 2;
+        // init();
+        // animate();
 
 
-    // function init() {
+        // function init() {
         //container
         container = document.createElement('div');
         document.body.appendChild(container);
@@ -73,7 +74,7 @@
         }
         //camera
         camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
-        camera.position.set(0,150,400);
+        camera.position.set(0, 150, 400);
 
         //scene
         scene = new THREE.Scene();
@@ -111,10 +112,11 @@
         scene.add(light2);
 
         //floor
-        var floorTexture = textureLoader.load('res/checkerboard.jpg');
+
+        var floorTexture = textureLoader.load('res/hardwood2_diffuse.jpg');
         floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
         floorTexture.repeat.set(10, 10);
-        var floorMaterial = new THREE.MeshBasicMaterial({map: floorTexture, side: THREE.DoubleSide});
+        var floorMaterial = new THREE.MeshBasicMaterial({ map: floorTexture, side: THREE.DoubleSide });
         var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
         var floor = new THREE.Mesh(floorGeometry, floorMaterial);
         floor.position.y = -0.5;
@@ -123,217 +125,215 @@
 
         // SKYBOX/FOG
         var skyBoxGeometry = new THREE.CubeGeometry(10000, 10000, 10000);
-        var skyBoxMaterial = new THREE.MeshBasicMaterial({color: 0x9999ff, side: THREE.BackSide});
+        var skyBoxMaterial = new THREE.MeshBasicMaterial({ color: 0x9999ff, side: THREE.BackSide });
         var skyBox = new THREE.Mesh(skyBoxGeometry, skyBoxMaterial);
         // scene.add(skyBox);
         scene.fog = new THREE.FogExp2(0x9999ff, 0.00025);
 
         // var jsonLoader = new THREE.JSONLoader();
         // jsonLoader.load( "res/model/marine_anims_all.json", addModelToScene );
-        new THREE.ObjectLoader().load( "res/model/marine/marine_walk.json", function ( loadedObject ) {
-            loadedObject.traverse( function ( child ) {
-                if ( child instanceof THREE.SkinnedMesh ) {
+        new THREE.ObjectLoader().load("res/model/marine/marine_walk.json", function (loadedObject) {
+            loadedObject.traverse(function (child) {
+                if (child instanceof THREE.SkinnedMesh) {
                     mesh = child;
                     android = mesh;
                     android.material.transparent = false;
                     android.material.morphTargets = true;
                     scene.add(android);
                 }
-            } );
-                if ( mesh === undefined ) {
-                    alert( 'Unable to find a SkinnedMesh in this place:\n\n' + url + '\n\n' );
-                    return;
-                }
-                // Add mesh and skeleton helper to scene
-                mesh.rotation.y = - 135 * Math.PI / 180;
-                scene.add( mesh );
-                skeleton = new THREE.SkeletonHelper( mesh );
-                skeleton.visible = false;
-                scene.add( skeleton );
-                // Initialize camera and camera controls
-                var radius = mesh.geometry.boundingSphere.radius;
-                var aspect = window.innerWidth / window.innerHeight;
-                camera = new THREE.PerspectiveCamera( 45, aspect, 1, 10000 );
-                camera.position.set( 0.0, radius, radius * 3.5 );
-                controls = new THREE.OrbitControls( camera, renderer.domElement );
-                controls.target.set( 0, radius, 0 );
-                controls.enableKeys = false;
-                controls.update();
+            });
+            if (mesh === undefined) {
+                alert('Unable to find a SkinnedMesh in this place:\n\n' + url + '\n\n');
+                return;
+            }
+            // Add mesh and skeleton helper to scene
+            mesh.rotation.y = - 135 * Math.PI / 180;
+            scene.add(mesh);
+            skeleton = new THREE.SkeletonHelper(mesh);
+            skeleton.visible = false;
+            scene.add(skeleton);
+            // Initialize camera and camera controls
+            var radius = mesh.geometry.boundingSphere.radius;
+            var aspect = window.innerWidth / window.innerHeight;
+            camera = new THREE.PerspectiveCamera(45, aspect, 1, 10000);
+            camera.position.set(0.0, radius, radius * 3.5);
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.target.set(0, radius, 0);
+            controls.enableKeys = false;
+            controls.update();
 
-                // Initialize mixer and clip actions
-                mixer = new THREE.AnimationMixer( mesh );
-                idleAction = mixer.clipAction( 'idle' );
-                walkAction = mixer.clipAction( 'walk' );
-                walkbackAction = mixer.clipAction( 'walk_back' );
-                runAction = mixer.clipAction( 'run' );
-                // danceAction = mixer.clipAction( 'dance' );
-                // danceAction.play();
-                // walkAction.play();
-                actions = [ idleAction, walkAction, walkbackAction, runAction ];
-                activateAllActions();
-                // Listen on window resizing and start the render loop
-                window.addEventListener( 'resize', onWindowResize, false );
-                animate();
-            }, onProgress, onError );
+            // Initialize mixer and clip actions
+            mixer = new THREE.AnimationMixer(mesh);
+            idleAction = mixer.clipAction('idle');
+            walkAction = mixer.clipAction('walk');
+            walkbackAction = mixer.clipAction('walk_back');
+            runAction = mixer.clipAction('run');
+            // danceAction = mixer.clipAction( 'dance' );
+            // danceAction.play();
+            // walkAction.play();
+            actions = [idleAction, walkAction, walkbackAction, runAction];
+            activateAllActions();
+            // Listen on window resizing and start the render loop
+            window.addEventListener('resize', onWindowResize, false);
+            animate();
+        }, onProgress, onError);
 
         container.appendChild(renderer.domElement);
 
         //GUI
         gui = new dat.GUI();
-        var folder1 = gui.addFolder( 'Visibility' );
-        var folder3 = gui.addFolder( 'Blend Weights' );
+        var folder1 = gui.addFolder('Visibility');
+        var folder3 = gui.addFolder('Blend Weights');
 
-        settings={
-            'show model':            true,
-            'show skeleton':         false,
-            'modify idle weight':    1.0,
-            'modify walk weight':    0.0,
-            'modify walk back weight':    0.0,
-            'modify run weight':     0.0,
+        settings = {
+            'show model': true,
+            'show skeleton': false,
+            'idle weight': 1.0,
+            'walk weight': 0.0,
+            'walk back weight': 0.0,
+            'run weight': 0.0,
         };
-        folder1.add( settings, 'show model' ).onChange( showModel );
-        folder1.add( settings, 'show skeleton' ).onChange( showSkeleton );
-        folder3.add( settings, 'idle weight', 0.0, 1.0, 0.01 ).listen().onChange( function ( weight ) { setWeight( idleAction, weight ) } );
-        folder3.add( settings, 'walk weight', 0.0, 1.0, 0.01 ).listen().onChange( function ( weight ) { setWeight( walkAction, weight ) } );
-        folder3.add( settings, 'walk back weight', 0.0, 1.0, 0.01 ).listen().onChange( function ( weight ) { setWeight( walkAction, weight ) } );
-        folder3.add( settings, 'run weight', 0.0, 1.0, 0.01 ).listen().onChange( function ( weight ) { setWeight( runAction, weight ) } );
+        folder1.add(settings, 'show model').onChange(showModel);
+        folder1.add(settings, 'show skeleton').onChange(showSkeleton);
+        folder3.add(settings, 'idle weight', 0.0, 1.0, 0.01).listen().onChange(function (weight) { setWeight(idleAction, weight) });
+        folder3.add(settings, 'walk weight', 0.0, 1.0, 0.01).listen().onChange(function (weight) { setWeight(walkAction, weight) });
+        folder3.add(settings, 'walk back weight', 0.0, 1.0, 0.01).listen().onChange(function (weight) { setWeight(walkAction, weight) });
+        folder3.add(settings, 'run weight', 0.0, 1.0, 0.01).listen().onChange(function (weight) { setWeight(runAction, weight) });
 
         folder1.open();
         folder3.open();
         gui.open();
 
-    // }
+        // }
 
-    function showModel( visibility ) {
+        function showModel(visibility) {
 
-        mesh.visible = visibility;
+            mesh.visible = visibility;
 
-    }
-
-
-    function showSkeleton( visibility ) {
-
-        skeleton.visible = visibility;
-
-    }
+        }
 
 
-    function onWindowResize() {
-        windowHalfX = window.innerWidth / 2;
-        windowHalfY = window.innerHeight / 2;
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    }
+        function showSkeleton(visibility) {
 
-    function activateAllActions() {
+            skeleton.visible = visibility;
 
-        setWeight( idleAction, settings[ 'modify idle weight' ] );
-        setWeight( walkAction, settings[ 'modify walk weight' ] );
-        setWeight( walkbackAction, settings[ 'modify walk back weight' ] );
-        setWeight( runAction, settings[ 'modify run weight' ] );
-
-        actions.forEach( function ( action ) {
-
-            action.play();
-
-        } );
-    }
-
-    function setWeight( action, weight ) {
-
-        action.enabled = true;
-        action.setEffectiveTimeScale( 1 );
-        action.setEffectiveWeight( weight );
-
-    }
+        }
 
 
-    function updateWeightSliders() {
+        function onWindowResize() {
+            windowHalfX = window.innerWidth / 2;
+            windowHalfY = window.innerHeight / 2;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
 
-        settings[ 'modify idle weight' ] = idleWeight;
-        settings[ 'modify walk weight' ] = walkWeight;
-        settings[ 'modify walk back weight' ] = walkbackWeight;
-        settings[ 'modify run weight' ] = runWeight;
+        function activateAllActions() {
 
-    }
+            setWeight(idleAction, settings['idle weight']);
+            setWeight(walkAction, settings['walk weight']);
+            setWeight(walkbackAction, settings['walk back weight']);
+            setWeight(runAction, settings['run weight']);
+
+            actions.forEach(function (action) {
+
+                action.play();
+
+            });
+        }
+
+        function setWeight(action, weight) {
+
+            action.enabled = true;
+            action.setEffectiveTimeScale(1);
+            action.setEffectiveWeight(weight);
+
+        }
 
 
-    function animate() {
-        requestAnimationFrame(animate);
-        idleWeight = idleAction.getEffectiveWeight();
-        walkWeight = walkAction.getEffectiveWeight();
-        walkbackWeight = walkbackAction.getEffectiveWeight();
-        runWeight = runAction.getEffectiveWeight();
+        function updateWeightSliders() {
 
-        updateWeightSliders();
-        // var mixerUpdateDelta = clock.getDelta();
-        // mixer.update( mixerUpdateDelta );
-        render();
-        update();
-        if (statsEnabled) stats.update();
-    }
+            settings['idle weight'] = idleWeight;
+            settings['walk weight'] = walkWeight;
+            settings['walk back weight'] = walkbackWeight;
+            settings['run weight'] = runWeight;
 
-    function update() {
-        // delta = change in time since last call (seconds)
-        delta = clock.getDelta(); 
-        mixer.update ( delta );
-        var moveDistance = 140 * delta;
-        walking = false;
+        }
 
-        // move forwards / backwards
-        if ( keyboard.pressed("down") )
-            android.translateZ( moveDistance );
-        if ( keyboard.pressed("up") )
-            android.translateZ(  -moveDistance );
-        // rotate left/right
-        if ( keyboard.pressed("left") )
-            android.rotation.y += delta;
-        if ( keyboard.pressed("right") )
-            android.rotation.y -= delta;
-    
-    
-        var walkingKeys = ["up", "down", "left", "right"];
-        for (var i = 0; i < walkingKeys.length; i++)
-        {
-            if ( keyboard.pressed(walkingKeys[i]) )
-            {
-                walking = true;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            idleWeight = idleAction.getEffectiveWeight();
+            walkWeight = walkAction.getEffectiveWeight();
+            walkbackWeight = walkbackAction.getEffectiveWeight();
+            runWeight = runAction.getEffectiveWeight();
+
+            updateWeightSliders();
+            // var mixerUpdateDelta = clock.getDelta();
+            // mixer.update( mixerUpdateDelta );
+            render();
+            update();
+            if (statsEnabled) stats.update();
+        }
+
+        function update() {
+            // delta = change in time since last call (seconds)
+            delta = clock.getDelta();
+            mixer.update(delta);
+            var moveDistance = 140 * delta;
+            walking = false;
+
+            // move forwards / backwards
+            if (keyboard.pressed("down"))
+                android.translateZ(moveDistance);
+            if (keyboard.pressed("up"))
+                android.translateZ(-moveDistance);
+            // rotate left/right
+            if (keyboard.pressed("left"))
+                android.rotation.y += delta;
+            if (keyboard.pressed("right"))
+                android.rotation.y -= delta;
+
+
+            var walkingKeys = ["up", "down", "left", "right"];
+            for (var i = 0; i < walkingKeys.length; i++) {
+                if (keyboard.pressed(walkingKeys[i])) {
+                    walking = true;
+                }
             }
+
+            controls.update();
+            stats.update();
         }
-    
-        controls.update();
-        stats.update();
-    }
 
 
-    function render() {
-        if (keyboard.pressed("down") && keyboard.pressed("up")) 
-        {
-            //up and down idle
-        }
-        else if ( android && walking && keyboard.pressed("up")) // up walk forward
-        {
-            setWeight( idleAction, 0.0 );
-            setWeight( walkAction, 1.0 );
-        }
-        else if (android && walking && keyboard.pressed("down")) //down walk back
-        {
-            setWeight( idleAction, 0.0 );
-            setWeight( walkbackAction, 1.0 );
-        }
-        else // set idle
-        {
-            setWeight( idleAction, 1.0 );
-            setWeight( walkAction, 0.0 );
-            setWeight( walkbackAction, 0.0 );
-        }
-    
-        renderer.render( scene, camera );
+        function render() {
+            if (keyboard.pressed("down") && keyboard.pressed("up")) {
+                //up and down idle
+            }
+            else if (android && walking && keyboard.pressed("up")) // up walk forward
+            {
+                setWeight(idleAction, 0.0);
+                setWeight(walkAction, 1.0);
+            }
+            else if (android && walking && keyboard.pressed("down")) //down walk back
+            {
+                setWeight(idleAction, 0.0);
+                setWeight(walkbackAction, 1.0);
+            }
+            else // set idle
+            {
+                setWeight(idleAction, 1.0);
+                setWeight(walkAction, 0.0);
+                setWeight(walkbackAction, 0.0);
+            }
 
-    }
+            renderer.render(scene, camera);
 
-</script>
+        }
+
+    </script>
 
 </body>
+
 </html>
